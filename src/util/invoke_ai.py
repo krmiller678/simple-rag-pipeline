@@ -1,18 +1,23 @@
-from openai import OpenAI
+from typing import List
+from interface.base_datastore import BaseDatastore, DataItem
+import lancedb
+from lancedb.table import Table
+import pyarrow as pa
+from google import genai
+from concurrent.futures import ThreadPoolExecutor
+import os
+from dotenv import load_dotenv
 
+load_dotenv()
 
 def invoke_ai(system_message: str, user_message: str) -> str:
-    """
-    Generic function to invoke an AI model given a system and user message.
-    Replace this if you want to use a different AI model.
-    """
-
-    client = OpenAI()  # Insert the API key here, or use env variable $OPENAI_API_KEY.
-    response = client.chat.completions.create(
-        model="o4-mini",
-        messages=[
-            {"role": "system", "content": system_message},
-            {"role": "user", "content": user_message},
-        ],
+    """Invokes Gemini using the GenAI SDK."""
+    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+    
+    # Gemini uses a 'contents' list where the system instruction is a separate param
+    response = client.models.generate_content(
+        model="gemini-3.1-flash-lite-preview",
+        config={'system_instruction': system_message},
+        contents=user_message
     )
-    return response.choices[0].message.content
+    return response.text
